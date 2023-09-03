@@ -1,6 +1,6 @@
 # TODO
-[ ] Tests
-[ ] Term
-[ ] Web
-[ ] GUI
-[ ] Notes
+- [ ] Tests   
+- [ ] Term   
+- [ ] Web   
+- [ ] GUI   
+- [ ] Notes   
