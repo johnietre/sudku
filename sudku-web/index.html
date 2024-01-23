@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+
+<head>
+  <title>Sudku</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="module" defer>
+    import init from "/pkg/sudku_web.js";
+    await init();
+  </script>
+<style>
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.given {
+  font-weight: bold;
+  color: black;
+}
+
+.grid3-box {
+  border: 2px solid black;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+}
+
+.grid3-box > div {
+  padding: none;
+  margin: none;
+  border: 1px solid black;
+  text-align: center;
+}
+
+.grid3-cell:not(.grid3-note-cell) {
+  font-size: 5em;
+}
+
+.grid3-cell:not(.given) {
+  color: blue;
+  cursor: pointer;
+}
+
+.grid3-cell:not(.given):not(.grid3-note-cell)::before {
+  content: " ";
+}
+
+.grid3-cell:focus {
+  border: 2px solid blue;
+}
+
+.grid3-note-cell {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.grid3-note-div {
+  text-align: center;
+  color: gray;
+  margin: none;
+  padding: none;
+  font-size: 1em;
+}
+
+.grid4-box {
+  border: 2px solid black;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr 1fr;
+}
+
+.grid4-box > div {
+  padding: none;
+  margin: none;
+  border: 1px solid black;
+  text-align: center;
+}
+
+.grid4-cell:not(.grid4-note-cell) {
+  font-size: 2.5em;
+}
+
+.grid4-cell:not(.given) {
+  color: blue;
+  cursor: pointer;
+}
+
+.grid4-cell:not(.given):not(.grid4-note-cell)::before {
+  content: " ";
+}
+
+.grid4-cell:focus {
+  border: 2px solid blue;
+}
+
+.grid4-note-cell {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+.grid4-note-div {
+  text-align: center;
+  color: gray;
+  font-size: 0.5em;
+}
+
+#main {
+  /*width: 100%;*/
+  width: min(80vw, 80vh);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: monospace;
+}
+
+#grid3 {
+  height: min(80vw, 80vh);
+  /*width: min(80vw, 80vh);*/
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  /*border: 2px solid black;*/
+}
+
+#grid4 {
+  height: min(80vw, 80vh);
+  /*width: min(80vw, 80vh);*/
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr 1fr;
+  /*border: 2px solid black;*/
+}
+
+#numbers3-div {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  margin: 5px;
+}
+
+#numbers3-div > div {
+  cursor: pointer;
+  text-align: center;
+  margin: none;
+  padding: 0px 15px;
+  font-size: 5em;
+}
+
+#numbers3-div > div:not(:first-child) {
+  border-left: 1px solid black;
+}
+
+#numbers4-div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 5px;
+}
+
+#numbers4-div > div {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+}
+
+#numbers4-div > div:first-child {
+  border-bottom: 1px solid black;
+}
+
+#numbers4-div > div > div {
+  cursor: pointer;
+  text-align: center;
+  margin: none;
+  padding: 0px 15px;
+  font-size: 3em;
+}
+
+#numbers4-div > div > div:not(:first-child) {
+  border-left: 1px solid black;
+}
+
+#top-buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+  margin: 5px;
+}
+
+#bottom-buttons > button {
+  margin: 3px;
+}
+
+#loader {
+  border: 16px solid #f3f3f3;
+  border-top: 16px solid #3498db;
+  border-radius: 50%;
+  width: min(25vh, 25vw);
+  height: min(25vh, 25vw);
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+</head>
+
+<body>
+</body>
+
+</html>

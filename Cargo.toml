@@ -1,8 +1,10 @@
 [workspace]
+resolver = "2"
 
 members = [
   "sudku-grid",
   "sudku-gui",
   "sudku-term",
   "sudku-web",
+  "sudku-mobile/src-tauri",
 ]

@@ -2,9 +2,6 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 
-pub mod complex;
-pub mod simple;
-
 pub use rand;
 
 use rand::{distributions::{Distribution, Uniform}, Rng};
@@ -12,83 +9,7 @@ use std::fmt;
 use std::ops::{Index, IndexMut};
 use std::mem::swap;
 
-#[derive(Clone, Copy, PartialEq, Eq, Default)]
-pub struct Num3x3(u16);
-
-impl Num3x3 {
-    const TOP_BIT: u16 = 1 << 15;
-
-    pub const fn new(num: u8) -> Self {
-        Self(num as _)
-    }
-
-    pub fn num(self) -> Option<u8> {
-        (self.0 <= 9).then_some(self.0 as _)
-    }
-
-    pub fn note(self, num: u8) -> Option<bool> {
-        // TODO: Check safety
-        (self.0 > 9).then_some(self.0 & Self::TOP_BIT >> (num as u16 - 1) != 0)
-    }
-
-    pub fn notes(self) -> Option<[bool; 9]> {
-        let mut arr = [false; 9];
-        for i in 1..=9 {
-            arr[i - 1] = self.note(i as _)?;
-        }
-        Some(arr)
-    }
-
-    pub fn with_num(self, num: u8) -> Self {
-        Self(num as _)
-    }
-
-    pub fn with_note(self, num: u8) -> Self {
-        if self.0 <= 9 {
-            return Self(Self::note_for_num(num));
-        }
-        Self(self.0 | Self::note_for_num(num))
-    }
-
-    pub fn with_toggle_note(self, num: u8) -> Self {
-        if self.0 <= 9 {
-            return Self(Self::note_for_num(num));
-        }
-        Self(self.0 & !Self::note_for_num(num))
-    }
-
-    pub fn set_num(&mut self, num: u8) {
-        self.0 = num as _;
-    }
-
-    pub fn set_note(&mut self, num: u8) {
-        if self.0 <= 9 {
-            self.0 = Self::note_for_num(num);
-            return;
-        }
-        self.0 |= Self::note_for_num(num);
-    }
-
-    // Returns whether the note is currently set (after the function runs)
-    pub fn set_toggle_note(&mut self, num: u8) -> bool {
-        let note = Self::note_for_num(num);
-        if self.0 <= 9 {
-            self.0 = note;
-            return true;
-        }
-        let not_set = self.0 & note == 0;
-        self.0 &= !note;
-        not_set
-    }
-
-    #[inline(always)]
-    fn note_for_num(num: u8) -> u16 {
-        // TODO: Check safety
-        Self::TOP_BIT >> (num as u16 - 1)
-    }
-}
-
-pub type Pos = (usize, usize);
+type Pos = (usize, usize);
 
 #[derive(Clone, Copy, PartialEq, Eq, Default)]
 pub enum GridLayout {
@@ -198,7 +119,7 @@ impl Grid3x3 {
         }
         // Sanity check
         // TODO: Possibly panic
-        if let Some(_pos) = self.is_valid() {
+        if let Some(pos) = self.is_valid() {
             self.randomize();
         }
     }
@@ -273,15 +194,6 @@ impl Grid3x3 {
 
     // TODO: Try to optimize better
     pub fn is_valid(&self) -> Option<Pos> {
-        // TODO: Do better
-        for x in 0..9 {
-            for y in 0..9 {
-                if self[(x, y)] == 0 {
-                    return Some((x, y));
-                }
-            }
-        }
-
         let mut arr = [0u8; 9];
         // Don't assign to silence "unused_assignments" warning
         let mut check;
@@ -602,7 +514,7 @@ impl Grid4x4 {
     pub fn randomize(&mut self) {
         use rand::{distributions::{Distribution, Uniform}, Rng};
 
-        //assert!(self.is_valid().is_none());
+        assert!(self.is_valid().is_none());
 
         let mut rng = rand::thread_rng();
         /*

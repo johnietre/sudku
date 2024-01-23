@@ -2,7 +2,6 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 
-pub mod complex;
 pub mod simple;
 
 pub use rand;

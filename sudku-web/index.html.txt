@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+
+<head>
+  <title>Sudku</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="module" defer>
+    import init from "/pkg/sudku_web.js";
+    await init();
+  </script>
+<style>
+#grid3x3 {
+  height: min(75vw, 75vh);
+  width: min(75vw, 75vh);
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  /*border: 2px solid black;*/
+}
+
+.grid-box {
+  border: 2px solid black;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+}
+
+.grid-box > div {
+  padding: none;
+  margin: none;
+  border: 1px solid black;
+  text-align: center;
+  font-size: 2em;
+}
+
+.given {
+  font-weight: bold;
+  color: black;
+}
+
+.grid-cell:not(.given) {
+  color: blue;
+  cursor: pointer;
+}
+
+.grid-cell:not(.given):not(.note-cell)::before {
+  content: " ";
+}
+
+.grid-cell:focus {
+  border: 2px solid blue;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.note-cell {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.note-div {
+  text-align: center;
+  color: gray;
+  font-size: 0.5em;
+}
+
+#main {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#top-buttons {
+}
+/*
+table {
+  table-layout: fixed;
+  height: min(75vw, 75vh);
+  width: min(75vw, 75vh);
+  border: 2px solid black;
+  border-collapse: collapse;
+}
+
+tr {
+  margin: none;
+  padding: none;
+}
+
+td {
+  margin: none;
+  border: 1px solid black;
+  text-align: center;
+  font-size: 2em;
+}
+
+.given {
+  font-weight: bold;
+  color: black;
+}
+
+td:not(.given) {
+  color: blue;
+}
+
+td:not(.given):not(.note-cell)::before {
+  content: " ";
+}
+
+.bold-bottom {
+  border-bottom: 3px solid black;
+}
+
+.bold-right {
+  border-right: 3px solid black;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.note-cell {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.note-div {
+  text-align: center;
+  color: gray;
+  font-size: 0.5em;
+}
+
+#main {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#top-buttons {
+}
+*/
+</style>
+</head>
+
+<body>
+  <div>
+</body>
+
+</html>

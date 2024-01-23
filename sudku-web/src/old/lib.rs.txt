@@ -1,0 +1,231 @@
+#![allow(non_snake_case)]
+
+use leptos::*;
+//use sudku_grid::{Grid3x3, History, Move, Pos};
+use sudku_grid::complex::{Grid3x3, History, Move, Pos};
+use wasm_bindgen::prelude::*;
+
+mod console;
+
+#[wasm_bindgen(start)]
+pub fn run() -> Result<(), wasm_bindgen::JsValue> {
+    init_wasm_hooks();
+    mount_to_body(App);
+    Ok(())
+}
+
+fn init_wasm_hooks() {
+    console_error_panic_hook::set_once();
+    tracing_wasm::set_as_global_default();
+}
+
+#[component]
+fn App() -> impl IntoView {
+    Grid3()
+}
+
+#[component]
+fn Grid3() -> impl IntoView {
+    let (num_blank, set_num_blank) = create_signal(18);
+    let mut grid = Grid3x3::randomized();
+    grid.remove_nums(num_blank());
+    let grid = create_rw_signal(grid);
+    provide_context(grid);
+    /*
+    create_effect(move |_| {
+        if grid.with(Grid3x3::is_valid).is_none() {
+            alert("Completed!");
+        }
+    });
+    */
+    let (history, set_history) = create_signal(History::new());
+    let (last_mv, set_last_mv) = create_signal(None::<Move>);
+    create_effect(move |_| {
+        //log!("{:?}", last_mv());
+        if let Some(_mv) = last_mv() {
+            //let (x, y) = mv.pos;
+            //log!("{}", grid.with(|grid| grid[y][x]));
+        }
+    });
+    let render_table = create_rw_signal(true);
+    view! {
+        <div id="main">
+            <div id="top-buttons" class="flex-col">
+                <div>
+                    <button
+                        on:click=move |_| {
+                            grid.update(|grid| {
+                                *grid = Grid3x3::randomized();
+                                grid.remove_nums(num_blank());
+                                render_table.set(true);
+                            })
+                        }
+                    >
+                        "Restart"
+                    </button>
+                </div>
+                <br />
+                <div>
+                    <label for="num-blank-input">"Number of Blanks: "</label>
+                    <input
+                        type="number" name="num-blank-input" size="4" maxlength="2"
+                        min="1" max="80" step="1" placeholder="Blanks"
+                        prop:value=num_blank
+                        on:input=move |ev| {
+                            if let Ok(num) = event_target_value(&ev).parse() {
+                                set_num_blank(num);
+                            }
+                        }
+                        />
+                </div>
+            </div>
+            <table>
+            {
+                move || {
+                    console::log!("rendering");
+                    if render_table.get() {
+                        render_table.set(false);
+                    }
+                    (0..9).map(|row| view! {<GridRow row=row />}).collect_view()
+                }
+            }
+            <tr></tr>
+            <tr>
+            {(1..=9).map(|n| view! { <td>{num_to_str(n)}</td>}).collect_view()}
+            </tr>
+            </table>
+            <div id="bottom-buttons">
+                <button
+                    on:click=move |_| {
+                        if let Some(mv) = set_history.try_update(|hist| hist.undo()).flatten() {
+                            set_last_mv(Some(mv));
+                            grid.update(|grid| grid[mv.pos.0][mv.pos.1] = mv.prev_num);
+                            console::log!("{}", mv.prev_num);
+                        }
+                    }
+                    prop:disabled=move || history.with(|hist| !hist.can_undo())
+                >
+                    "Undo"
+                </button>
+                <button
+                    on:click=move |_| {
+                        if let Some(mv) = set_history.try_update(|hist| hist.redo()).flatten() {
+                            set_last_mv(Some(mv));
+                            grid.update(|grid| grid[mv.pos.0][mv.pos.1] = mv.num);
+                            console::log!("{}", mv.num);
+                        }
+                    }
+                    prop:disabled=move || history.with(|hist| !hist.can_redo())
+                >
+                    "Redo"
+                </button>
+            </div>
+        </div>
+    }
+}
+
+#[component]
+fn GridRow(row: usize) -> impl IntoView {
+    view! {
+        <tr>
+        {(0..9)
+            .map(|col| {
+                view! { <GridSquare pos=(col, row) /> }
+            })
+            .collect_view()}
+        </tr>
+    }
+}
+
+#[component]
+fn GridSquare(pos: Pos) -> impl IntoView {
+    let grid = use_context::<RwSignal<Grid3x3>>().expect("missing grid context");
+    let num = grid.with(|grid| grid[pos]);
+    let (x, y) = pos;
+    view! {
+    <td contenteditable={if num == 0 { "true" } else { "false" }}
+        class:bold-bottom=move || y % 3 == 2 && y != 8
+        class:bold-right=move || x % 3 == 2 && x != 8
+        on:keydown=move |ev| {
+            let key = ev.key();
+            if key == "Backspace" || key == "Delete" {
+                grid.update(|grid| {
+                    grid[pos] = 0;
+                });
+                return;
+            } else if key == "Escape" || key == "Tab" {
+                return;
+            }
+            let num = key.chars().next().unwrap_or('\0');
+            if !num.is_ascii_digit() {
+                ev.prevent_default();
+                return;
+            }
+            let val = num as u8 - b'0';
+            let valid = grid.with(|grid| {
+                grid.pos_is_valid(pos, val)
+            });
+            if !valid {
+                ev.prevent_default();
+            }
+        }
+        on:input=move |ev| {
+            // TODO: This will silently fail. Do better
+            //let val = event_target_value(&ev);
+            let Ok(ev) = ev.dyn_into::<leptos::ev::InputEvent>() else {
+                console::error!("error converting event into InputEvent");
+                return;
+            };
+            let mut val = ev.data().unwrap_or(String::new()).parse::<u8>().unwrap_or(0);
+            if val > 9 {
+                val = 0;
+            }
+            grid.update(|grid| {
+                /*
+                set_history.update(|hist| {
+                    hist.push(Move::new(pos, val, grid[pos]));
+                }); 
+                */
+                grid[pos] = val;
+                if grid.is_valid().is_none() {
+                    alert("Completed!");
+                }
+            });
+        }
+        class:given=move || num != 0
+    >
+        {move || grid.with(|grid| {
+            num_to_str(grid[pos])
+        })}
+    </td>
+    }
+}
+
+#[allow(dead_code)]
+#[inline(always)]
+const fn num_to_str(n: u8) -> &'static str {
+    match n {
+        1 => "1",
+        2 => "2",
+        3 => "3",
+        4 => "4",
+        5 => "5",
+        6 => "6",
+        7 => "7",
+        8 => "8",
+        9 => "9",
+        10 => "A",
+        11 => "B",
+        12 => "C",
+        13 => "D",
+        14 => "E",
+        15 => "F",
+        16 => "G",
+        _ => "",
+    }
+}
+
+#[wasm_bindgen]
+extern {
+    fn alert(s: &str);
+}

@@ -2,91 +2,12 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 
-pub mod complex;
-pub mod simple;
-
 pub use rand;
 
 use rand::{distributions::{Distribution, Uniform}, Rng};
 use std::fmt;
 use std::ops::{Index, IndexMut};
 use std::mem::swap;
-
-#[derive(Clone, Copy, PartialEq, Eq, Default)]
-pub struct Num3x3(u16);
-
-impl Num3x3 {
-    const TOP_BIT: u16 = 1 << 15;
-
-    pub const fn new(num: u8) -> Self {
-        Self(num as _)
-    }
-
-    pub fn num(self) -> Option<u8> {
-        (self.0 <= 9).then_some(self.0 as _)
-    }
-
-    pub fn note(self, num: u8) -> Option<bool> {
-        // TODO: Check safety
-        (self.0 > 9).then_some(self.0 & Self::TOP_BIT >> (num as u16 - 1) != 0)
-    }
-
-    pub fn notes(self) -> Option<[bool; 9]> {
-        let mut arr = [false; 9];
-        for i in 1..=9 {
-            arr[i - 1] = self.note(i as _)?;
-        }
-        Some(arr)
-    }
-
-    pub fn with_num(self, num: u8) -> Self {
-        Self(num as _)
-    }
-
-    pub fn with_note(self, num: u8) -> Self {
-        if self.0 <= 9 {
-            return Self(Self::note_for_num(num));
-        }
-        Self(self.0 | Self::note_for_num(num))
-    }
-
-    pub fn with_toggle_note(self, num: u8) -> Self {
-        if self.0 <= 9 {
-            return Self(Self::note_for_num(num));
-        }
-        Self(self.0 & !Self::note_for_num(num))
-    }
-
-    pub fn set_num(&mut self, num: u8) {
-        self.0 = num as _;
-    }
-
-    pub fn set_note(&mut self, num: u8) {
-        if self.0 <= 9 {
-            self.0 = Self::note_for_num(num);
-            return;
-        }
-        self.0 |= Self::note_for_num(num);
-    }
-
-    // Returns whether the note is currently set (after the function runs)
-    pub fn set_toggle_note(&mut self, num: u8) -> bool {
-        let note = Self::note_for_num(num);
-        if self.0 <= 9 {
-            self.0 = note;
-            return true;
-        }
-        let not_set = self.0 & note == 0;
-        self.0 &= !note;
-        not_set
-    }
-
-    #[inline(always)]
-    fn note_for_num(num: u8) -> u16 {
-        // TODO: Check safety
-        Self::TOP_BIT >> (num as u16 - 1)
-    }
-}
 
 pub type Pos = (usize, usize);
 
@@ -98,30 +19,169 @@ pub enum GridLayout {
     Box,
 }
 
-pub type Nums3x3 = [[u8; 9]; 9];
+#[derive(Clone, Copy, PartialEq, Eq, Default, Debug)]
+pub struct Num3x3(u16);
+
+impl Num3x3 {
+    const NOTE_BIT: u16 = 1 << 15;
+    const GIVEN_BIT: u16 = 1 << 14;
+
+    pub const fn new(num: u8) -> Self {
+        Self(num as _)
+    }
+
+    pub fn new_note(num: u8) -> Self {
+        if num == 0 { Self(0) } else { Self(Self::note_for_num(num)) }
+    }
+
+    pub fn num(self) -> Option<u8> {
+        (!self.is_note()).then_some(self.0 as u8)
+    }
+
+    pub fn num_or_zero(self) -> u8 {
+        self.num().unwrap_or(0)
+    }
+
+    pub fn is_note(self) -> bool {
+        self.0 & Self::NOTE_BIT != 0
+    }
+
+    pub fn is_given(self) -> bool {
+        self.0 & Self::GIVEN_BIT != 0
+    }
+
+    pub fn has_note(self, num: u8) -> Option<bool> {
+        (num != 0 && self.is_note())
+            .then_some(self.0 & (1 << (num - 1) as u16) != 0)
+    }
+
+    pub fn notes(self) -> Option<[bool; 9]> {
+        let mut arr = [false; 9];
+        for i in 1..=9 {
+            arr[i - 1] = self.has_note(i as _)?;
+        }
+        Some(arr)
+    }
+
+    pub fn with_num(self, num: u8) -> Self {
+        Self(num as _)
+    }
+
+    pub fn with_note(self, num: u8) -> Self {
+        // TODO: check with is_note()?
+        if self.0 <= 9 {
+            return Self(Self::note_for_num(num));
+        }
+        Self(self.0 | Self::note_for_num(num))
+    }
+
+    pub fn with_notes(mut self, nums: [bool; 9]) -> Self {
+        for n in nums.into_iter().enumerate().filter_map(|(i, b)| b.then_some(i + 1)) {
+            self = self.with_note(n as _);
+        }
+        self
+    }
+
+    pub fn with_toggle_note(self, num: u8) -> Self {
+        // TODO: check with is_note()?
+        if self.0 <= 9 {
+            return Self(Self::note_for_num(num));
+        }
+        Self(Self::NOTE_BIT | (self.0 ^ Self::note_for_num(num)))
+    }
+
+    pub fn set_num(&mut self, num: u8) {
+        self.0 = num as _;
+    }
+
+    pub fn set_note(&mut self, num: u8) {
+        // TODO: check with is_note()?
+        if self.0 <= 9 {
+            self.0 = Self::note_for_num(num);
+            return;
+        }
+        self.0 |= Self::note_for_num(num);
+    }
+
+    // Returns whether the note is set by the function (true) or unset (false).
+    pub fn set_toggle_note(&mut self, num: u8) -> bool {
+        let note = Self::note_for_num(num);
+        // TODO: check with is_note()?
+        if self.0 <= 9 {
+            self.0 = note;
+            return true;
+        }
+        let not_set = self.0 & note == 0;
+        *self = self.with_toggle_note(num);
+        not_set
+    }
+
+    pub fn set_given(&mut self) {
+        self.0 = Self::GIVEN_BIT | self.num_or_zero() as u16;
+    }
+
+    #[inline(always)]
+    fn note_for_num(num: u8) -> u16 {
+        assert_ne!(num, 0);
+        Self::NOTE_BIT | (1 << num as u16 - 1)
+    }
+}
+
+pub type Nums3x3 = [[Num3x3; 9]; 9];
 
 pub const BASE_3X3: Nums3x3 = [
-    [1, 2, 3, 4, 5, 6, 7, 8, 9],
-    [4, 5, 6, 7, 8, 9, 1, 2, 3],
-    [7, 8, 9, 1, 2, 3, 4, 5, 6],
-    [2, 3, 4, 5, 6, 7, 8, 9, 1],
-    [5, 6, 7, 8, 9, 1, 2, 3, 4],
-    [8, 9, 1, 2, 3, 4, 5, 6, 7],
-    [3, 4, 5, 6, 7, 8, 9, 1, 2],
-    [6, 7, 8, 9, 1, 2, 3, 4, 5],
-    [9, 1, 2, 3, 4, 5, 6, 7, 8],
+    [
+        Num3x3(1), Num3x3(2), Num3x3(3), Num3x3(4), Num3x3(5),
+        Num3x3(6), Num3x3(7), Num3x3(8), Num3x3(9),
+    ],
+    [
+        Num3x3(4), Num3x3(5), Num3x3(6), Num3x3(7), Num3x3(8),
+        Num3x3(9), Num3x3(1), Num3x3(2), Num3x3(3),
+    ],
+    [
+        Num3x3(7), Num3x3(8), Num3x3(9), Num3x3(1), Num3x3(2),
+        Num3x3(3), Num3x3(4), Num3x3(5), Num3x3(6),
+    ],
+    [
+        Num3x3(2), Num3x3(3), Num3x3(4), Num3x3(5), Num3x3(6),
+        Num3x3(7), Num3x3(8), Num3x3(9), Num3x3(1),
+    ],
+    [
+        Num3x3(5), Num3x3(6), Num3x3(7), Num3x3(8), Num3x3(9),
+        Num3x3(1), Num3x3(2), Num3x3(3), Num3x3(4),
+    ],
+    [
+        Num3x3(8), Num3x3(9), Num3x3(1), Num3x3(2), Num3x3(3),
+        Num3x3(4), Num3x3(5), Num3x3(6), Num3x3(7),
+    ],
+    [
+        Num3x3(3), Num3x3(4), Num3x3(5), Num3x3(6), Num3x3(7),
+        Num3x3(8), Num3x3(9), Num3x3(1), Num3x3(2),
+    ],
+    [
+        Num3x3(6), Num3x3(7), Num3x3(8), Num3x3(9), Num3x3(1),
+        Num3x3(2), Num3x3(3), Num3x3(4), Num3x3(5),
+    ],
+    [
+        Num3x3(9), Num3x3(1), Num3x3(2), Num3x3(3), Num3x3(4),
+        Num3x3(5), Num3x3(6), Num3x3(7), Num3x3(8),
+    ],
 ];
 
+pub const EMPTY_3X3: Nums3x3 = [[Num3x3(0); 9]; 9];
+
 #[derive(Clone, PartialEq, Eq, Default)]
-pub struct Grid3x3([[u8; 9]; 9], GridLayout);
+pub struct Grid3x3([[Num3x3; 9]; 9], GridLayout);
 
 impl Grid3x3 {
+    pub const EMPTY: Self = Self(EMPTY_3X3, GridLayout::Row);
+
     pub const fn new() -> Self {
         Self(BASE_3X3, GridLayout::Row)
     }
 
     pub const fn empty() -> Self {
-        Self([[0u8; 9]; 9], GridLayout::Row)
+        Self([[Num3x3(0); 9]; 9], GridLayout::Row)
     }
 
     pub fn randomized() -> Self {
@@ -204,6 +264,7 @@ impl Grid3x3 {
     }
 
     // n is the number to remove
+    // TODO: return error if too many are attempted to be removed
     pub fn remove_nums(&mut self, n: usize) {
         assert!(n < 81, "cannot remove more symbols than exists");
         // At least n^2 - 1 distict symbols must be kept when removing symbols to have a unique
@@ -223,9 +284,9 @@ impl Grid3x3 {
                 let mut x = coords.sample(&mut rng);
                 let mut y = coords.sample(&mut rng);
                 for _ in 0..2 {
-                    let num = self[y][x] as usize;
+                    let num = self[y][x].num_or_zero() as usize;
                     if num != 0 && (!num_gone || nums[num] != 1) {
-                        self[y][x] = 0;
+                        self[y][x] = Num3x3(0);
                         nums[num] -= 1;
                         removed = true;
                         if nums[num] == 0 {
@@ -241,13 +302,25 @@ impl Grid3x3 {
         }
     }
 
+    // Sets all non-zero numbers as given
+    pub fn set_given(&mut self) {
+        for y in 0..9 {
+            for x in 0..9 {
+                if self[y][x].num_or_zero() != 0 {
+                    self[y][x].set_given();
+                }
+            }
+        }
+    }
+
     // Returns true if the number can be placed in the square
     pub fn pos_is_valid(&self, pos: Pos, n: u8) -> bool {
         if n == 0 {
             return true;
         }
-        let mut arr = [0u8; 9];
 
+        let mut arr = [Num3x3(0); 9];
+        let n = Num3x3(n as _);
         self.get_row_for(pos, &mut arr);
         if arr.contains(&n) {
             return false;
@@ -276,13 +349,13 @@ impl Grid3x3 {
         // TODO: Do better
         for x in 0..9 {
             for y in 0..9 {
-                if self[(x, y)] == 0 {
+                if self[(x, y)].num_or_zero() == 0 {
                     return Some((x, y));
                 }
             }
         }
 
-        let mut arr = [0u8; 9];
+        let mut arr = [Num3x3(0); 9];
         // Don't assign to silence "unused_assignments" warning
         let mut check;
         // Check the first 8 rows and columns
@@ -293,7 +366,7 @@ impl Grid3x3 {
                 // (y * 3) % 9 gets the x of the first square (top left) of a box
                 self.get_box_for(((y * 3) % 9, y), &mut arr);
                 for i in 0..9 {
-                    let n = arr[i] as u16;
+                    let n = arr[i].num_or_zero() as u16;
                     let num = 1 << n;
                     if check & num != 0 {
                         return Some((i % 3, i / 3));
@@ -304,7 +377,7 @@ impl Grid3x3 {
             check = 0;
             // Check row
             for x in 0..9 {
-                let n = self[y][x];
+                let n = self[y][x].num_or_zero();
                 let num = 1 << n;
                 if check & num != 0 {
                     return Some((x, y));
@@ -315,7 +388,7 @@ impl Grid3x3 {
             check = 0;
             let x = y;
             for y in 0..9 {
-                let n = self[y][x];
+                let n = self[y][x].num_or_zero();
                 let num = 1 << n;
                 if check & num != 0 {
                     return Some((x, y));
@@ -326,7 +399,7 @@ impl Grid3x3 {
         // Check last col
         check = 0;
         for y in 0..9 {
-            let n = self[y][8];
+            let n = self[y][8].num_or_zero();
             let num = 1 << n;
             if check & num != 0 {
                 return Some((8, y));
@@ -336,19 +409,19 @@ impl Grid3x3 {
         None
     }
 
-    pub fn get_row_for(&self, (_, y): Pos, arr: &mut [u8; 9]) {
+    pub fn get_row_for(&self, (_, y): Pos, arr: &mut [Num3x3; 9]) {
         for x in 0..9 {
             arr[x] = self[y][x];
         }
     }
 
-    pub fn get_col_for(&self, (x, _): Pos, arr: &mut [u8; 9]) {
+    pub fn get_col_for(&self, (x, _): Pos, arr: &mut [Num3x3; 9]) {
         for y in 0..9 {
             arr[y] = self[y][x];
         }
     }
 
-    pub fn get_box_for(&self, (x, y): Pos, arr: &mut [u8; 9]) {
+    pub fn get_box_for(&self, (x, y): Pos, arr: &mut [Num3x3; 9]) {
         let (x, y) = (x / 3 * 3, y / 3 * 3);
         let mut i = 0;
         for y in y..y + 3 {
@@ -505,8 +578,8 @@ impl Grid3x3 {
             unsafe {
                 // Rust doesn't allow the second mutable borrow even though they
                 // individual elements referenced won't share any memory at all.
-                let r1 = &mut self.0[y1][x1] as *mut u8;
-                let r2 = &mut self.0[y2][x2] as *mut u8;
+                let r1 = &mut self.0[y1][x1] as *mut Num3x3;
+                let r2 = &mut self.0[y2][x2] as *mut Num3x3;
                 swap(&mut *r1, &mut *r2);
             }
         }
@@ -514,7 +587,7 @@ impl Grid3x3 {
 }
 
 impl Index<Pos> for Grid3x3 {
-    type Output = u8;
+    type Output = Num3x3;
     fn index(&self, (x, y): Pos) -> &Self::Output {
         &self.0[y][x]
     }
@@ -527,7 +600,7 @@ impl IndexMut<Pos> for Grid3x3 {
 }
 
 impl Index<usize> for Grid3x3 {
-    type Output = [u8; 9];
+    type Output = [Num3x3; 9];
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
     }
@@ -543,7 +616,9 @@ impl fmt::Display for Grid3x3 {
     fn fmt(&self, w: &mut fmt::Formatter<'_>) -> fmt::Result {
         for y in 0..9 {
             for x in 0..9 {
-                let c = if self.0[y][x] == 0 { '_' } else { (self.0[y][x] + b'0') as char };
+                // TODO
+                let n = self[y][x].num_or_zero();
+                let c = if n == 0 { '_' } else { (n + b'0') as char };
                 match x {
                     2 | 5 => write!(w, "{} | ", c)?,
                     8 => write!(w, "{}", c)?,
@@ -560,37 +635,229 @@ impl fmt::Display for Grid3x3 {
     }
 }
 
-pub type Nums4x4 = [[u8; 16]; 16];
+#[derive(Clone, Copy, PartialEq, Eq, Default)]
+pub struct Num4x4(u32);
+
+impl Num4x4 {
+    const NOTE_BIT: u32 = 1 << 31;
+    const GIVEN_BIT: u32 = 1 << 30;
+
+    pub const fn new(num: u8) -> Self {
+        Self(num as _)
+    }
+
+    pub fn new_note(num: u8) -> Self {
+        if num == 0 { Self(0) } else { Self(Self::note_for_num(num)) }
+    }
+
+    pub fn num(self) -> Option<u8> {
+        (!self.is_note()).then_some(self.0 as u8)
+    }
+
+    pub fn num_or_zero(self) -> u8 {
+        self.num().unwrap_or(0)
+    }
+
+    pub fn is_note(self) -> bool {
+        self.0 & Self::NOTE_BIT != 0
+    }
+
+    pub fn is_given(self) -> bool {
+        self.0 & Self::GIVEN_BIT != 0
+    }
+
+    pub fn has_note(self, num: u8) -> Option<bool> {
+        (num != 0 && self.is_note())
+            .then_some(self.0 & (1 << (num - 1) as u32) != 0)
+    }
+
+    pub fn notes(self) -> Option<[bool; 16]> {
+        let mut arr = [false; 16];
+        for i in 1..=16 {
+            arr[i - 1] = self.has_note(i as _)?;
+        }
+        Some(arr)
+    }
+
+    pub fn with_num(self, num: u8) -> Self {
+        Self(num as _)
+    }
+
+    pub fn with_note(self, num: u8) -> Self {
+        // TODO: check with is_note()?
+        if self.0 <= 16 {
+            return Self(Self::note_for_num(num));
+        }
+        Self(self.0 | Self::note_for_num(num))
+    }
+
+    pub fn with_notes(mut self, nums: [bool; 16]) -> Self {
+        for n in nums.into_iter().enumerate().filter_map(|(i, b)| b.then_some(i + 1)) {
+            self = self.with_note(n as _);
+        }
+        self
+    }
+
+    pub fn with_toggle_note(self, num: u8) -> Self {
+        // TODO: check with is_note()?
+        if self.0 <= 16 {
+            return Self(Self::note_for_num(num));
+        }
+        Self(Self::NOTE_BIT | (self.0 ^ Self::note_for_num(num)))
+    }
+
+    pub fn set_num(&mut self, num: u8) {
+        self.0 = num as _;
+    }
+
+    pub fn set_note(&mut self, num: u8) {
+        // TODO: check with is_note()?
+        if self.0 <= 16 {
+            self.0 = Self::note_for_num(num);
+            return;
+        }
+        self.0 |= Self::note_for_num(num);
+    }
+
+    // Returns whether the note is set by the function (true) or unset (false).
+    pub fn set_toggle_note(&mut self, num: u8) -> bool {
+        let note = Self::note_for_num(num);
+        // TODO: check with is_note()?
+        if self.0 <= 16 {
+            self.0 = note;
+            return true;
+        }
+        let not_set = self.0 & note == 0;
+        *self = self.with_toggle_note(num);
+        not_set
+    }
+
+    pub fn set_given(&mut self) {
+        self.0 = Self::GIVEN_BIT | self.num_or_zero() as u32;
+    }
+
+    #[inline(always)]
+    fn note_for_num(num: u8) -> u32 {
+        assert_ne!(num, 0);
+        Self::NOTE_BIT | (1 << num as u32 - 1)
+    }
+}
+
+pub type Nums4x4 = [[Num4x4; 16]; 16];
 
 pub const BASE_4X4: Nums4x4 = [
-    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-    [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4],
-    [9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8],
-    [13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1],
-    [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5],
-    [10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-    [14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-    [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1, 2],
-    [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6],
-    [11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    [15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
-    [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3],
-    [8, 9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7],
-    [12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-    [16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    [
+        Num4x4(1), Num4x4(2), Num4x4(3), Num4x4(4),
+        Num4x4(5), Num4x4(6), Num4x4(7), Num4x4(8),
+        Num4x4(9), Num4x4(10), Num4x4(11), Num4x4(12),
+        Num4x4(13), Num4x4(14), Num4x4(15), Num4x4(16),
+    ],
+    [
+        Num4x4(5), Num4x4(6), Num4x4(7), Num4x4(8),
+        Num4x4(9), Num4x4(10), Num4x4(11), Num4x4(12),
+        Num4x4(13), Num4x4(14), Num4x4(15), Num4x4(16),
+        Num4x4(1), Num4x4(2), Num4x4(3), Num4x4(4),
+    ],
+    [
+        Num4x4(9), Num4x4(10), Num4x4(11), Num4x4(12),
+        Num4x4(13), Num4x4(14), Num4x4(15), Num4x4(16),
+        Num4x4(1), Num4x4(2), Num4x4(3), Num4x4(4),
+        Num4x4(5), Num4x4(6), Num4x4(7), Num4x4(8),
+    ],
+    [
+        Num4x4(13), Num4x4(14), Num4x4(15), Num4x4(16),
+        Num4x4(1), Num4x4(2), Num4x4(3), Num4x4(4),
+        Num4x4(5), Num4x4(6), Num4x4(7), Num4x4(8),
+        Num4x4(9), Num4x4(10), Num4x4(11), Num4x4(12),
+    ],
+    [
+        Num4x4(2), Num4x4(3), Num4x4(4), Num4x4(5),
+        Num4x4(6), Num4x4(7), Num4x4(8), Num4x4(9),
+        Num4x4(10), Num4x4(11), Num4x4(12), Num4x4(13),
+        Num4x4(14), Num4x4(15), Num4x4(16), Num4x4(1),
+    ],
+    [
+        Num4x4(6), Num4x4(7), Num4x4(8), Num4x4(9),
+        Num4x4(10), Num4x4(11), Num4x4(12), Num4x4(13),
+        Num4x4(14), Num4x4(15), Num4x4(16), Num4x4(1),
+        Num4x4(2), Num4x4(3), Num4x4(4), Num4x4(5),
+    ],
+    [
+        Num4x4(10), Num4x4(11), Num4x4(12), Num4x4(13),
+        Num4x4(14), Num4x4(15), Num4x4(16), Num4x4(1),
+        Num4x4(2), Num4x4(3), Num4x4(4), Num4x4(5),
+        Num4x4(6), Num4x4(7), Num4x4(8), Num4x4(9),
+    ],
+    [
+        Num4x4(14), Num4x4(15), Num4x4(16), Num4x4(1),
+        Num4x4(2), Num4x4(3), Num4x4(4), Num4x4(5),
+        Num4x4(6), Num4x4(7), Num4x4(8), Num4x4(9),
+        Num4x4(10), Num4x4(11), Num4x4(12), Num4x4(13),
+    ],
+    [
+        Num4x4(3), Num4x4(4), Num4x4(5), Num4x4(6),
+        Num4x4(7), Num4x4(8), Num4x4(9), Num4x4(10),
+        Num4x4(11), Num4x4(12), Num4x4(13), Num4x4(14),
+        Num4x4(15), Num4x4(16), Num4x4(1), Num4x4(2),
+    ],
+    [
+        Num4x4(7), Num4x4(8), Num4x4(9), Num4x4(10),
+        Num4x4(11), Num4x4(12), Num4x4(13), Num4x4(14),
+        Num4x4(15), Num4x4(16), Num4x4(1), Num4x4(2),
+        Num4x4(3), Num4x4(4), Num4x4(5), Num4x4(6),
+    ],
+    [
+        Num4x4(11), Num4x4(12), Num4x4(13), Num4x4(14),
+        Num4x4(15), Num4x4(16), Num4x4(1), Num4x4(2),
+        Num4x4(3), Num4x4(4), Num4x4(5), Num4x4(6),
+        Num4x4(7), Num4x4(8), Num4x4(9), Num4x4(10),
+    ],
+    [
+        Num4x4(15), Num4x4(16), Num4x4(1), Num4x4(2),
+        Num4x4(3), Num4x4(4), Num4x4(5), Num4x4(6),
+        Num4x4(7), Num4x4(8), Num4x4(9), Num4x4(10),
+        Num4x4(11), Num4x4(12), Num4x4(13), Num4x4(14),
+    ],
+    [
+        Num4x4(4), Num4x4(5), Num4x4(6), Num4x4(7),
+        Num4x4(8), Num4x4(9), Num4x4(10), Num4x4(11),
+        Num4x4(12), Num4x4(13), Num4x4(14), Num4x4(15),
+        Num4x4(16), Num4x4(1), Num4x4(2), Num4x4(3),
+    ],
+    [
+        Num4x4(8), Num4x4(9), Num4x4(10), Num4x4(11),
+        Num4x4(12), Num4x4(13), Num4x4(14), Num4x4(15),
+        Num4x4(16), Num4x4(1), Num4x4(2), Num4x4(3),
+        Num4x4(4), Num4x4(5), Num4x4(6), Num4x4(7),
+    ],
+    [
+        Num4x4(12), Num4x4(13), Num4x4(14), Num4x4(15),
+        Num4x4(16), Num4x4(1), Num4x4(2), Num4x4(3),
+        Num4x4(4), Num4x4(5), Num4x4(6), Num4x4(7),
+        Num4x4(8), Num4x4(9), Num4x4(10), Num4x4(11),
+    ],
+    [
+        Num4x4(16), Num4x4(1), Num4x4(2), Num4x4(3),
+        Num4x4(4), Num4x4(5), Num4x4(6), Num4x4(7),
+        Num4x4(8), Num4x4(9), Num4x4(10), Num4x4(11),
+        Num4x4(12), Num4x4(13), Num4x4(14), Num4x4(15),
+    ],
 ];
 
-#[derive(Default)]
-pub struct Grid4x4([[u8; 16]; 16], GridLayout);
+pub const EMPTY_4X4: Nums4x4 = [[Num4x4(0); 16]; 16];
+
+#[derive(Default, Clone, PartialEq, Eq)]
+pub struct Grid4x4([[Num4x4; 16]; 16], GridLayout);
 
 impl Grid4x4 {
+    pub const EMPTY: Self = Self(EMPTY_4X4, GridLayout::Row);
+
     pub const fn new() -> Self {
         Self(BASE_4X4, GridLayout::Row)
     }
 
     pub fn empty() -> Self {
-        Self([[0u8; 16]; 16], GridLayout::Row)
+        Self([[Num4x4(0); 16]; 16], GridLayout::Row)
     }
 
     pub fn randomized() -> Self {
@@ -677,6 +944,7 @@ impl Grid4x4 {
     }
 
     // n is the number to remove
+    // TODO: return error if too many are attempted to be removed
     pub fn remove_nums(&mut self, n: usize) {
         assert!(n < 256, "cannot remove more symbols than exists");
         // At least n^2 - 1 distict symbols must be kept when removing symbols to have a unique
@@ -696,9 +964,9 @@ impl Grid4x4 {
                 let mut x = coords.sample(&mut rng);
                 let mut y = coords.sample(&mut rng);
                 for _ in 0..2 {
-                    let num = self[y][x] as usize;
+                    let num = self[y][x].num_or_zero() as usize;
                     if num != 0 && (!num_gone || nums[num] != 1) {
-                        self[y][x] = 0;
+                        self[y][x] = Num4x4(0);
                         nums[num] -= 1;
                         removed = true;
                         if nums[num] == 0 {
@@ -714,13 +982,25 @@ impl Grid4x4 {
         }
     }
 
+    // Sets all non-zero numbers as given
+    pub fn set_given(&mut self) {
+        for y in 0..16 {
+            for x in 0..16 {
+                if self[y][x].num_or_zero() != 0 {
+                    self[y][x].set_given();
+                }
+            }
+        }
+    }
+
     // Returns true if the number can be placed in the square
     pub fn pos_is_valid(&self, pos: Pos, n: u8) -> bool {
         if n == 0 {
             return true;
         }
-        let mut arr = [0u8; 16];
 
+        let mut arr = [Num4x4(0); 16];
+        let n = Num4x4(n as _);
         self.get_row_for(pos, &mut arr);
         if arr.contains(&n) {
             return false;
@@ -736,7 +1016,16 @@ impl Grid4x4 {
     // Returns None if valid, otherwise, returns the position of the first bad square encountered.
     // TODO: Try to optimize better
     pub fn is_valid(&self) -> Option<Pos> {
-        let mut arr = [0u8; 16];
+        // TODO: Do better
+        for x in 0..16 {
+            for y in 0..16 {
+                if self[(x, y)].num_or_zero() == 0 {
+                    return Some((x, y));
+                }
+            }
+        }
+
+        let mut arr = [Num4x4(0); 16];
         // Don't assign to silence "unused_assignments" warning
         let mut check;
         // Check the first 8 rows and columns
@@ -747,7 +1036,7 @@ impl Grid4x4 {
                 // (y * 4) % 16 gets the x of the first square (top left) of a box
                 self.get_box_for(((y * 4) % 16, y), &mut arr);
                 for i in 0..16 {
-                    let n = arr[i] as u16;
+                    let n = arr[i].num_or_zero() as u16;
                     let num = 1 << n;
                     if check & num != 0 {
                         return Some((i % 4, i / 4));
@@ -758,7 +1047,7 @@ impl Grid4x4 {
             check = 0;
             // Check row
             for x in 0..16 {
-                let n = self[y][x];
+                let n = self[y][x].num_or_zero();
                 let num = 1 << n;
                 if check & num != 0 {
                     return Some((x, y));
@@ -769,7 +1058,7 @@ impl Grid4x4 {
             check = 0;
             let x = y;
             for y in 0..16 {
-                let n = self[y][x];
+                let n = self[y][x].num_or_zero();
                 let num = 1 << n;
                 if check & num != 0 {
                     return Some((x, y));
@@ -780,7 +1069,7 @@ impl Grid4x4 {
         // Check last col
         check = 0;
         for y in 0..16 {
-            let n = self[y][8];
+            let n = self[y][15].num_or_zero();
             let num = 1 << n;
             if check & num != 0 {
                 return Some((15, y));
@@ -790,19 +1079,19 @@ impl Grid4x4 {
         None
     }
 
-    pub fn get_row_for(&self, (_, y): Pos, arr: &mut [u8; 16]) {
+    pub fn get_row_for(&self, (_, y): Pos, arr: &mut [Num4x4; 16]) {
         for x in 0..16 {
             arr[x] = self[y][x];
         }
     }
 
-    pub fn get_col_for(&self, (x, _): Pos, arr: &mut [u8; 16]) {
+    pub fn get_col_for(&self, (x, _): Pos, arr: &mut [Num4x4; 16]) {
         for y in 0..16 {
             arr[y] = self[y][x];
         }
     }
 
-    pub fn get_box_for(&self, (x, y): Pos, arr: &mut [u8; 16]) {
+    pub fn get_box_for(&self, (x, y): Pos, arr: &mut [Num4x4; 16]) {
         let (x, y) = (x / 4 * 4, y / 4 * 4);
         let mut i = 0;
         for y in y..y + 4 {
@@ -985,8 +1274,8 @@ impl Grid4x4 {
             unsafe {
                 // Rust doesn't allow the second mutable borrow even though they
                 // individual elements referenced won't share any memory at all.
-                let r1 = &mut self.0[y1][x1] as *mut u8;
-                let r2 = &mut self.0[y2][x2] as *mut u8;
+                let r1 = &mut self.0[y1][x1] as *mut Num4x4;
+                let r2 = &mut self.0[y2][x2] as *mut Num4x4;
                 swap(&mut *r1, &mut *r2);
             }
         }
@@ -994,7 +1283,7 @@ impl Grid4x4 {
 }
 
 impl Index<Pos> for Grid4x4 {
-    type Output = u8;
+    type Output = Num4x4;
     fn index(&self, (x, y): Pos) -> &Self::Output {
         &self.0[y][x]
     }
@@ -1007,7 +1296,7 @@ impl IndexMut<Pos> for Grid4x4 {
 }
 
 impl Index<usize> for Grid4x4 {
-    type Output = [u8; 16];
+    type Output = [Num4x4; 16];
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
     }
@@ -1023,7 +1312,7 @@ impl fmt::Display for Grid4x4 {
     fn fmt(&self, w: &mut fmt::Formatter<'_>) -> fmt::Result {
         for y in 0..16 {
             for x in 0..16 {
-                let c = match self.0[y][x] {
+                let c = match self.0[y][x].num_or_zero() {
                     0 => '_',
                     b @ 1..=9 => (b + b'0') as char,
                     b => (b'A' + b - 10) as char,
@@ -1167,4 +1456,6 @@ mod tests {
         assert!(grid.pos_is_valid((8, 1), 2));
         assert!(grid.pos_is_valid((1, 8), 2));
     }
+    
+    // TODO: Test 4x4
 }
