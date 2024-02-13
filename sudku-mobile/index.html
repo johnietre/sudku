@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+
+<head>
+  <title>Sudku</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <script type="module" defer>
+    import init from "/pkg/sudku_web.js";
+    await init();
+  </script>
+<style>
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+* {
+  touch-action: manipulation;
+}
+
+#app {
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.given {
+  font-weight: bold;
+  color: black;
+}
+
+.focused-cell {
+  background-color: aqua;
+}
+
+.secondary-focus {
+  background-color: rgba(0, 255, 255, 0.25);
+}
+
+.grid3-box {
+  border: 1px solid black;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+}
+
+.grid3-cell {
+  padding: none;
+  margin: none;
+  border: 1px solid black;
+  text-align: center;
+}
+
+.grid3-cell:not(.grid3-note-cell) {
+  font-size: 7vmin;
+}
+
+.grid3-cell:not(.given) {
+  color: blue;
+  cursor: pointer;
+}
+
+.grid3-cell:not(.given):not(.grid3-note-cell)::before {
+  content: " ";
+}
+
+.grid3-note-cell {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+}
+
+.grid3-note-div {
+  text-align: center;
+  color: gray;
+  margin: none;
+  padding: none;
+  font-size: 2vmin;
+}
+
+.grid4-box {
+  border: 1px solid black;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr 1fr;
+}
+
+.grid4-box > div {
+  padding: none;
+  margin: none;
+  border: 1px solid black;
+  text-align: center;
+}
+
+.grid4-cell:not(.grid4-note-cell) {
+  font-size: 4vmin;
+}
+
+.grid4-cell:not(.given) {
+  color: blue;
+  cursor: pointer;
+}
+
+.grid4-cell:not(.given):not(.grid4-note-cell)::before {
+  content: " ";
+}
+
+.grid4-note-cell {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr 1fr;
+}
+
+.grid4-note-div {
+  margin: none;
+  padding: none;
+  text-align: center;
+  color: gray;
+  font-size: 0.75vmin;
+}
+
+.grid4-zoomed-cell {
+}
+
+#main {
+  /*width: 100%;*/
+  width: 80vmin;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: monospace;
+}
+
+#grid3 {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+}
+
+#grid4 {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr 1fr;
+}
+
+#numbers3-div {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  margin: 5px;
+}
+
+#numbers3-div > div {
+  cursor: pointer;
+  text-align: center;
+  margin: none;
+  padding: 0px 2.5vmin;
+  font-size: 7vmin;
+}
+
+#numbers3-div > div:not(:first-child) {
+  border-left: 1px solid black;
+}
+
+#numbers4-div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 5px;
+}
+
+#numbers4-div > div {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+}
+
+#numbers4-div > div:first-child {
+  border-bottom: 1px solid black;
+}
+
+#numbers4-div > div > div {
+  cursor: pointer;
+  text-align: center;
+  margin: none;
+  padding: 0px 2vmin;
+  font-size: 7vmin;
+}
+
+#numbers4-div > div > div:not(:first-child) {
+  border-left: 1px solid black;
+}
+
+#side-buttons {
+  display: flex;
+  flex-direction: column;
+  margin-left: 7px;
+  /*height: 80vw;*/
+}
+
+#side-buttons > div:first-child {
+  margin-bottom: auto;
+}
+
+#side-buttons > div:not(:first-child) {
+  margin: 10px 0;
+}
+
+#side-buttons > div > button {
+  border: none;
+  background-color: transparent;
+  padding: 0;
+}
+
+#side-buttons > div > button:not([disabled]):hover {
+  cursor: pointer;
+}
+
+#side-button > div {
+  aspect-ratio: 1 / 1;
+}
+
+#side-buttons > div > button > div, #side-buttons > div > button > img {
+  width: 5vmin;
+  height: 5vmin;
+}
+
+#loader {
+  border: 16px solid #f3f3f3;
+  border-top: 16px solid #3498db;
+  border-radius: 50%;
+  width: 25vmin;
+  height: 25vmin;
+  animation: spin 2s linear infinite;
+}
+
+#settings {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 75vw;
+  padding: 5px;
+
+  border: 5px solid black;
+  background-color: white;
+}
+
+#settings-opts {
+}
+
+#settings-opts > * {
+  margin-bottom: 5px;
+}
+
+#settings-bottom-buttons {
+  margin-top: 10px;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 5fr 1fr 1fr;
+}
+
+#settings-bottom-buttons > div:not(:first-child) {
+  text-align: center;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+</head>
+
+<body>
+</body>
+
+</html>

@@ -4,10 +4,13 @@
 
 pub use rand;
 
-use rand::{distributions::{Distribution, Uniform}, Rng};
+use rand::{
+    distributions::{Distribution, Uniform},
+    Rng,
+};
 use std::fmt;
-use std::ops::{Index, IndexMut};
 use std::mem::swap;
+use std::ops::{Index, IndexMut};
 
 pub type Pos = (usize, usize);
 
@@ -31,7 +34,11 @@ impl Num3x3 {
     }
 
     pub fn new_note(num: u8) -> Self {
-        if num == 0 { Self(0) } else { Self(Self::note_for_num(num)) }
+        if num == 0 {
+            Self(0)
+        } else {
+            Self(Self::note_for_num(num))
+        }
     }
 
     pub fn num(self) -> Option<u8> {
@@ -51,8 +58,7 @@ impl Num3x3 {
     }
 
     pub fn has_note(self, num: u8) -> Option<bool> {
-        (num != 0 && self.is_note())
-            .then_some(self.0 & (1 << (num - 1) as u16) != 0)
+        (num != 0 && self.is_note()).then_some(self.0 & (1 << (num - 1) as u16) != 0)
     }
 
     pub fn notes(self) -> Option<[bool; 9]> {
@@ -76,7 +82,11 @@ impl Num3x3 {
     }
 
     pub fn with_notes(mut self, nums: [bool; 9]) -> Self {
-        for n in nums.into_iter().enumerate().filter_map(|(i, b)| b.then_some(i + 1)) {
+        for n in nums
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, b)| b.then_some(i + 1))
+        {
             self = self.with_note(n as _);
         }
         self
@@ -131,40 +141,103 @@ pub type Nums3x3 = [[Num3x3; 9]; 9];
 
 pub const BASE_3X3: Nums3x3 = [
     [
-        Num3x3(1), Num3x3(2), Num3x3(3), Num3x3(4), Num3x3(5),
-        Num3x3(6), Num3x3(7), Num3x3(8), Num3x3(9),
+        Num3x3(1),
+        Num3x3(2),
+        Num3x3(3),
+        Num3x3(4),
+        Num3x3(5),
+        Num3x3(6),
+        Num3x3(7),
+        Num3x3(8),
+        Num3x3(9),
     ],
     [
-        Num3x3(4), Num3x3(5), Num3x3(6), Num3x3(7), Num3x3(8),
-        Num3x3(9), Num3x3(1), Num3x3(2), Num3x3(3),
+        Num3x3(4),
+        Num3x3(5),
+        Num3x3(6),
+        Num3x3(7),
+        Num3x3(8),
+        Num3x3(9),
+        Num3x3(1),
+        Num3x3(2),
+        Num3x3(3),
     ],
     [
-        Num3x3(7), Num3x3(8), Num3x3(9), Num3x3(1), Num3x3(2),
-        Num3x3(3), Num3x3(4), Num3x3(5), Num3x3(6),
+        Num3x3(7),
+        Num3x3(8),
+        Num3x3(9),
+        Num3x3(1),
+        Num3x3(2),
+        Num3x3(3),
+        Num3x3(4),
+        Num3x3(5),
+        Num3x3(6),
     ],
     [
-        Num3x3(2), Num3x3(3), Num3x3(4), Num3x3(5), Num3x3(6),
-        Num3x3(7), Num3x3(8), Num3x3(9), Num3x3(1),
+        Num3x3(2),
+        Num3x3(3),
+        Num3x3(4),
+        Num3x3(5),
+        Num3x3(6),
+        Num3x3(7),
+        Num3x3(8),
+        Num3x3(9),
+        Num3x3(1),
     ],
     [
-        Num3x3(5), Num3x3(6), Num3x3(7), Num3x3(8), Num3x3(9),
-        Num3x3(1), Num3x3(2), Num3x3(3), Num3x3(4),
+        Num3x3(5),
+        Num3x3(6),
+        Num3x3(7),
+        Num3x3(8),
+        Num3x3(9),
+        Num3x3(1),
+        Num3x3(2),
+        Num3x3(3),
+        Num3x3(4),
     ],
     [
-        Num3x3(8), Num3x3(9), Num3x3(1), Num3x3(2), Num3x3(3),
-        Num3x3(4), Num3x3(5), Num3x3(6), Num3x3(7),
+        Num3x3(8),
+        Num3x3(9),
+        Num3x3(1),
+        Num3x3(2),
+        Num3x3(3),
+        Num3x3(4),
+        Num3x3(5),
+        Num3x3(6),
+        Num3x3(7),
     ],
     [
-        Num3x3(3), Num3x3(4), Num3x3(5), Num3x3(6), Num3x3(7),
-        Num3x3(8), Num3x3(9), Num3x3(1), Num3x3(2),
+        Num3x3(3),
+        Num3x3(4),
+        Num3x3(5),
+        Num3x3(6),
+        Num3x3(7),
+        Num3x3(8),
+        Num3x3(9),
+        Num3x3(1),
+        Num3x3(2),
     ],
     [
-        Num3x3(6), Num3x3(7), Num3x3(8), Num3x3(9), Num3x3(1),
-        Num3x3(2), Num3x3(3), Num3x3(4), Num3x3(5),
+        Num3x3(6),
+        Num3x3(7),
+        Num3x3(8),
+        Num3x3(9),
+        Num3x3(1),
+        Num3x3(2),
+        Num3x3(3),
+        Num3x3(4),
+        Num3x3(5),
     ],
     [
-        Num3x3(9), Num3x3(1), Num3x3(2), Num3x3(3), Num3x3(4),
-        Num3x3(5), Num3x3(6), Num3x3(7), Num3x3(8),
+        Num3x3(9),
+        Num3x3(1),
+        Num3x3(2),
+        Num3x3(3),
+        Num3x3(4),
+        Num3x3(5),
+        Num3x3(6),
+        Num3x3(7),
+        Num3x3(8),
     ],
 ];
 
@@ -227,7 +300,7 @@ impl Grid3x3 {
                     };
                     self.0.swap(row1, row2);
                     self.make_row_wise();
-                },
+                }
                 t @ 3..=4 => {
                     if t == 3 {
                         self.make_row_wise();
@@ -320,17 +393,16 @@ impl Grid3x3 {
         }
 
         let mut arr = [Num3x3(0); 9];
-        let n = Num3x3(n as _);
         self.get_row_for(pos, &mut arr);
-        if arr.contains(&n) {
+        if arr.iter().any(|num| num.num_or_zero() == n) {
             return false;
         }
         self.get_col_for(pos, &mut arr);
-        if arr.contains(&n) {
+        if arr.iter().any(|num| num.num_or_zero() == n) {
             return false;
         }
         self.get_box_for(pos, &mut arr);
-        !arr.contains(&n)
+        !arr.iter().any(|num| num.num_or_zero() == n)
     }
 
     // Returns None if valid, otherwise, returns the position of the first bad square encountered.
@@ -647,7 +719,11 @@ impl Num4x4 {
     }
 
     pub fn new_note(num: u8) -> Self {
-        if num == 0 { Self(0) } else { Self(Self::note_for_num(num)) }
+        if num == 0 {
+            Self(0)
+        } else {
+            Self(Self::note_for_num(num))
+        }
     }
 
     pub fn num(self) -> Option<u8> {
@@ -667,8 +743,7 @@ impl Num4x4 {
     }
 
     pub fn has_note(self, num: u8) -> Option<bool> {
-        (num != 0 && self.is_note())
-            .then_some(self.0 & (1 << (num - 1) as u32) != 0)
+        (num != 0 && self.is_note()).then_some(self.0 & (1 << (num - 1) as u32) != 0)
     }
 
     pub fn notes(self) -> Option<[bool; 16]> {
@@ -692,7 +767,11 @@ impl Num4x4 {
     }
 
     pub fn with_notes(mut self, nums: [bool; 16]) -> Self {
-        for n in nums.into_iter().enumerate().filter_map(|(i, b)| b.then_some(i + 1)) {
+        for n in nums
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, b)| b.then_some(i + 1))
+        {
             self = self.with_note(n as _);
         }
         self
@@ -747,100 +826,292 @@ pub type Nums4x4 = [[Num4x4; 16]; 16];
 
 pub const BASE_4X4: Nums4x4 = [
     [
-        Num4x4(1), Num4x4(2), Num4x4(3), Num4x4(4),
-        Num4x4(5), Num4x4(6), Num4x4(7), Num4x4(8),
-        Num4x4(9), Num4x4(10), Num4x4(11), Num4x4(12),
-        Num4x4(13), Num4x4(14), Num4x4(15), Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
     ],
     [
-        Num4x4(5), Num4x4(6), Num4x4(7), Num4x4(8),
-        Num4x4(9), Num4x4(10), Num4x4(11), Num4x4(12),
-        Num4x4(13), Num4x4(14), Num4x4(15), Num4x4(16),
-        Num4x4(1), Num4x4(2), Num4x4(3), Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
     ],
     [
-        Num4x4(9), Num4x4(10), Num4x4(11), Num4x4(12),
-        Num4x4(13), Num4x4(14), Num4x4(15), Num4x4(16),
-        Num4x4(1), Num4x4(2), Num4x4(3), Num4x4(4),
-        Num4x4(5), Num4x4(6), Num4x4(7), Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
     ],
     [
-        Num4x4(13), Num4x4(14), Num4x4(15), Num4x4(16),
-        Num4x4(1), Num4x4(2), Num4x4(3), Num4x4(4),
-        Num4x4(5), Num4x4(6), Num4x4(7), Num4x4(8),
-        Num4x4(9), Num4x4(10), Num4x4(11), Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
     ],
     [
-        Num4x4(2), Num4x4(3), Num4x4(4), Num4x4(5),
-        Num4x4(6), Num4x4(7), Num4x4(8), Num4x4(9),
-        Num4x4(10), Num4x4(11), Num4x4(12), Num4x4(13),
-        Num4x4(14), Num4x4(15), Num4x4(16), Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
     ],
     [
-        Num4x4(6), Num4x4(7), Num4x4(8), Num4x4(9),
-        Num4x4(10), Num4x4(11), Num4x4(12), Num4x4(13),
-        Num4x4(14), Num4x4(15), Num4x4(16), Num4x4(1),
-        Num4x4(2), Num4x4(3), Num4x4(4), Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
     ],
     [
-        Num4x4(10), Num4x4(11), Num4x4(12), Num4x4(13),
-        Num4x4(14), Num4x4(15), Num4x4(16), Num4x4(1),
-        Num4x4(2), Num4x4(3), Num4x4(4), Num4x4(5),
-        Num4x4(6), Num4x4(7), Num4x4(8), Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
     ],
     [
-        Num4x4(14), Num4x4(15), Num4x4(16), Num4x4(1),
-        Num4x4(2), Num4x4(3), Num4x4(4), Num4x4(5),
-        Num4x4(6), Num4x4(7), Num4x4(8), Num4x4(9),
-        Num4x4(10), Num4x4(11), Num4x4(12), Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
     ],
     [
-        Num4x4(3), Num4x4(4), Num4x4(5), Num4x4(6),
-        Num4x4(7), Num4x4(8), Num4x4(9), Num4x4(10),
-        Num4x4(11), Num4x4(12), Num4x4(13), Num4x4(14),
-        Num4x4(15), Num4x4(16), Num4x4(1), Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
     ],
     [
-        Num4x4(7), Num4x4(8), Num4x4(9), Num4x4(10),
-        Num4x4(11), Num4x4(12), Num4x4(13), Num4x4(14),
-        Num4x4(15), Num4x4(16), Num4x4(1), Num4x4(2),
-        Num4x4(3), Num4x4(4), Num4x4(5), Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
     ],
     [
-        Num4x4(11), Num4x4(12), Num4x4(13), Num4x4(14),
-        Num4x4(15), Num4x4(16), Num4x4(1), Num4x4(2),
-        Num4x4(3), Num4x4(4), Num4x4(5), Num4x4(6),
-        Num4x4(7), Num4x4(8), Num4x4(9), Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
     ],
     [
-        Num4x4(15), Num4x4(16), Num4x4(1), Num4x4(2),
-        Num4x4(3), Num4x4(4), Num4x4(5), Num4x4(6),
-        Num4x4(7), Num4x4(8), Num4x4(9), Num4x4(10),
-        Num4x4(11), Num4x4(12), Num4x4(13), Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
     ],
     [
-        Num4x4(4), Num4x4(5), Num4x4(6), Num4x4(7),
-        Num4x4(8), Num4x4(9), Num4x4(10), Num4x4(11),
-        Num4x4(12), Num4x4(13), Num4x4(14), Num4x4(15),
-        Num4x4(16), Num4x4(1), Num4x4(2), Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
     ],
     [
-        Num4x4(8), Num4x4(9), Num4x4(10), Num4x4(11),
-        Num4x4(12), Num4x4(13), Num4x4(14), Num4x4(15),
-        Num4x4(16), Num4x4(1), Num4x4(2), Num4x4(3),
-        Num4x4(4), Num4x4(5), Num4x4(6), Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
     ],
     [
-        Num4x4(12), Num4x4(13), Num4x4(14), Num4x4(15),
-        Num4x4(16), Num4x4(1), Num4x4(2), Num4x4(3),
-        Num4x4(4), Num4x4(5), Num4x4(6), Num4x4(7),
-        Num4x4(8), Num4x4(9), Num4x4(10), Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
     ],
     [
-        Num4x4(16), Num4x4(1), Num4x4(2), Num4x4(3),
-        Num4x4(4), Num4x4(5), Num4x4(6), Num4x4(7),
-        Num4x4(8), Num4x4(9), Num4x4(10), Num4x4(11),
-        Num4x4(12), Num4x4(13), Num4x4(14), Num4x4(15),
+        Num4x4(16),
+        Num4x4(1),
+        Num4x4(2),
+        Num4x4(3),
+        Num4x4(4),
+        Num4x4(5),
+        Num4x4(6),
+        Num4x4(7),
+        Num4x4(8),
+        Num4x4(9),
+        Num4x4(10),
+        Num4x4(11),
+        Num4x4(12),
+        Num4x4(13),
+        Num4x4(14),
+        Num4x4(15),
     ],
 ];
 
@@ -867,7 +1138,10 @@ impl Grid4x4 {
     }
 
     pub fn randomize(&mut self) {
-        use rand::{distributions::{Distribution, Uniform}, Rng};
+        use rand::{
+            distributions::{Distribution, Uniform},
+            Rng,
+        };
 
         //assert!(self.is_valid().is_none());
 
@@ -907,7 +1181,7 @@ impl Grid4x4 {
                     };
                     self.0.swap(row1, row2);
                     self.make_row_wise();
-                },
+                }
                 t @ 3..=4 => {
                     if t == 3 {
                         self.make_row_wise();
@@ -1000,17 +1274,16 @@ impl Grid4x4 {
         }
 
         let mut arr = [Num4x4(0); 16];
-        let n = Num4x4(n as _);
         self.get_row_for(pos, &mut arr);
-        if arr.contains(&n) {
+        if arr.iter().any(|num| num.num_or_zero() == n) {
             return false;
         }
         self.get_col_for(pos, &mut arr);
-        if arr.contains(&n) {
+        if arr.iter().any(|num| num.num_or_zero() == n) {
             return false;
         }
         self.get_box_for(pos, &mut arr);
-        !arr.contains(&n)
+        !arr.iter().any(|num| num.num_or_zero() == n)
     }
 
     // Returns None if valid, otherwise, returns the position of the first bad square encountered.
@@ -1456,6 +1729,6 @@ mod tests {
         assert!(grid.pos_is_valid((8, 1), 2));
         assert!(grid.pos_is_valid((1, 8), 2));
     }
-    
+
     // TODO: Test 4x4
 }

@@ -1,0 +1,4 @@
+Settings: https://uxwing.com/setting-line-icon/
+Undo: https://uxwing.com/history-icon/
+Redo: Undo reflected
+Pencil: https://uxwing.com/pencil-icon/

@@ -12,9 +12,24 @@
   </script>
 <style>
 body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  justify-content: center;
+}
+
+* {
+  touch-action: manipulation;
+}
+
+#app {
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
 }
 
 .hidden {
@@ -32,14 +47,18 @@ body {
   color: black;
 }
 
+.focused-cell {
+  background-color: aqua;
+}
+
 .grid3-box {
-  border: 2px solid black;
+  border: 1px solid black;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr;
 }
 
-.grid3-box > div {
+.grid3-cell {
   padding: none;
   margin: none;
   border: 1px solid black;
@@ -47,7 +66,7 @@ body {
 }
 
 .grid3-cell:not(.grid3-note-cell) {
-  font-size: 5em;
+  font-size: 7vmin;
 }
 
 .grid3-cell:not(.given) {
@@ -59,14 +78,10 @@ body {
   content: " ";
 }
 
-.grid3-cell:focus {
-  border: 2px solid blue;
-}
-
 .grid3-note-cell {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
 }
 
 .grid3-note-div {
@@ -74,11 +89,11 @@ body {
   color: gray;
   margin: none;
   padding: none;
-  font-size: 1em;
+  font-size: 2vmin;
 }
 
 .grid4-box {
-  border: 2px solid black;
+  border: 1px solid black;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr 1fr;
@@ -92,7 +107,7 @@ body {
 }
 
 .grid4-cell:not(.grid4-note-cell) {
-  font-size: 2.5em;
+  font-size: 4vmin;
 }
 
 .grid4-cell:not(.given) {
@@ -105,24 +120,29 @@ body {
 }
 
 .grid4-cell:focus {
-  border: 2px solid blue;
+  background-color: aqua;
 }
 
 .grid4-note-cell {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr 1fr;
 }
 
 .grid4-note-div {
+  margin: none;
+  padding: none;
   text-align: center;
   color: gray;
-  font-size: 0.5em;
+  font-size: 0.75vmin;
+}
+
+.grid4-zoomed-cell {
 }
 
 #main {
   /*width: 100%;*/
-  width: min(80vw, 80vh);
+  width: 80vmin;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -130,23 +150,19 @@ body {
 }
 
 #grid3 {
-  height: min(80vw, 80vh);
-  /*width: min(80vw, 80vh);*/
   width: 100%;
+  aspect-ratio: 1 / 1;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr;
-  /*border: 2px solid black;*/
 }
 
 #grid4 {
-  height: min(80vw, 80vh);
-  /*width: min(80vw, 80vh);*/
   width: 100%;
+  aspect-ratio: 1 / 1;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr 1fr;
-  /*border: 2px solid black;*/
 }
 
 #numbers3-div {
@@ -160,8 +176,8 @@ body {
   cursor: pointer;
   text-align: center;
   margin: none;
-  padding: 0px 15px;
-  font-size: 5em;
+  padding: 0px 2.5vmin;
+  font-size: 7vmin;
 }
 
 #numbers3-div > div:not(:first-child) {
@@ -189,33 +205,87 @@ body {
   cursor: pointer;
   text-align: center;
   margin: none;
-  padding: 0px 15px;
-  font-size: 3em;
+  padding: 0px 2vmin;
+  font-size: 7vmin;
 }
 
 #numbers4-div > div > div:not(:first-child) {
   border-left: 1px solid black;
 }
 
-#top-buttons {
+#side-buttons {
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  width: 100%;
-  margin: 5px;
+  flex-direction: column;
+  margin-left: 7px;
+  /*height: 80vw;*/
 }
 
-#bottom-buttons > button {
-  margin: 3px;
+#side-buttons > div:first-child {
+  margin-bottom: auto;
+}
+
+#side-buttons > div:not(:first-child) {
+  margin: 10px 0;
+}
+
+#side-buttons > div > button {
+  border: none;
+  background-color: transparent;
+  padding: 0;
+}
+
+#side-buttons > div > button:not([disabled]):hover {
+  cursor: pointer;
+}
+
+#side-button > div {
+  aspect-ratio: 1 / 1;
+}
+
+#side-buttons > div > button > div, #side-buttons > div > button > img {
+  width: 5vmin;
+  height: 5vmin;
 }
 
 #loader {
   border: 16px solid #f3f3f3;
   border-top: 16px solid #3498db;
   border-radius: 50%;
-  width: min(25vh, 25vw);
-  height: min(25vh, 25vw);
+  width: 25vmin;
+  height: 25vmin;
   animation: spin 2s linear infinite;
+}
+
+#settings {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 75vw;
+  padding: 5px;
+
+  border: 5px solid black;
+  background-color: white;
+}
+
+#settings-opts {
+  overflow: scroll;
+}
+
+#settings-opts > * {
+  margin-bottom: 5px;
+}
+
+#settings-bottom-buttons {
+  margin-top: 10px;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 5fr 1fr 1fr;
+}
+
+#settings-bottom-buttons > div:not(:first-child) {
+  text-align: center;
 }
 
 @keyframes spin {

@@ -1,0 +1,5 @@
+Install: cargo install tauri-cli@2.0.0-beta.1
+1. cargo tauri ios init
+2. cargo tauri ios dev --open
+3. Go to project app page in Xcode, Build Phases > Build Rust Code, check the box labeled "Based on dependency analysis"
+4. cargo tauri ios build -vvv
